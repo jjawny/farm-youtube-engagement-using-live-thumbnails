@@ -1,5 +1,10 @@
 @host = http://localhost:8000
+@num_of_top_comments=100
 
 ### Health check
 GET {{host}}/ping
+Accept: application/json
+
+### Trigger algo
+GET {{host}}/farm-comments?limit={{num_of_top_comments}}
 Accept: application/json
