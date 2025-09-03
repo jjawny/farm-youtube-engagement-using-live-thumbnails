@@ -1,8 +1,7 @@
-from googleapiclient.discovery import build
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from app.config import build_youtube
 from dotenv import load_dotenv
-import os
+from fastapi import FastAPI
 from app.routes import (
     farm_engagement,
     ping,
@@ -19,16 +18,15 @@ async def lifespan(app: FastAPI):
     """
     Exposes shared resources for the lifespan of the web API; like a lightweight DI container.
     """
-    # Expose the YouTube API client as a singleton to avoid recreating
-    if not (api_key := os.getenv("YOUTUBE_API_KEY")):
-        raise HTTPException(status_code=500, detail="Missing YOUTUBE_API_KEY")
-
-    app.state.youtube = build("youtube", "v3", developerKey=api_key)
+    # Expose the YouTube client as a singleton
+    creds, client = build_youtube()
+    app.state.youtube = client
+    app.state.youtube_creds = creds
 
     try:
         yield
     finally:
-        # No close function to call, but remove the ref for GC to collect
+        # Signal GC to come collect
         app.state.youtube = None
 
 
