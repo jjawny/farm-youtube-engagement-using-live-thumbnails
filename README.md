@@ -11,7 +11,7 @@ TODO: GIF here (mix in capcut, screen record, convert to GIF keep mp4 preview JI
 ![Find your YouTube video ID](./README/find-your-youtube-video-id.jpg)
 
 ### Your thumbnail
-To keep things simple, the base thumbnail has 5 slots for PFPs (positions hard-coded). This can be changed, for example, pasting hundreds of small PFPs covering the entire thumbnail. Check Google's docs for thumbnail limitations (e.g., must be <2MB).
+To keep things simple, the base thumbnail has 5 slots for PFPs (positions hard-coded). This can be changed, for example, pasting hundreds of small PFPs covering the entire thumbnail. Check Google's docs for thumbnail limitations (e.g., must be <2MB). You may also need to verify via YouTube's frontend to be allowed to set custom thumbnails (edit the video in the browser and click custom thumbnail to get prompted) from here on, you can set via the API.
 ![base thumbnail](./app/assets/base_thumbnail.jpeg) 
 
 ### Your YouTube API access
@@ -19,7 +19,7 @@ Using an API key is simple for reads (listing comments) but OAuth is required fo
 
 Lifespan of a refresh token? as of writing, they appear to be long-lived (~600k seconds ≈ 7 days). This is plenty of time for this project's purpose. Recommend storing in a secrets vault (e.g., Azure Key Vault) and restart API/create an operations endpoint to ping and hot reload the YouTube client with the new refresh token.
 
-1. Generate your Google OAuth Client [here](https://console.cloud.google.com/apis/credentials)  
+1. Generate your Google OAuth Client [here](https://console.cloud.google.com/apis/credentials) (desktop to avoid needing redirect URLs etc)
    ![How to generate YouTube API key step 1](./README/how-to-create-youtube-oauth-client.jpg)
 1. Take note of your **Client ID** and **Client Secret**
 2. You may need to add your account (channel owner account) as a test user if your app is unpublished
