@@ -1,9 +1,15 @@
 from googleapiclient.discovery import build
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
-from app.routes import engagement, ping
 from dotenv import load_dotenv
 import os
+from app.routes import (
+    farm_engagement,
+    ping,
+    test_fetch_comments,
+    test_create_thumbnail,
+    test_upload_thumbnail,
+)
 
 load_dotenv()
 
@@ -28,4 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(ping.router)
-app.include_router(engagement.router)
+app.include_router(farm_engagement.router)
+app.include_router(test_fetch_comments.router)
+app.include_router(test_create_thumbnail.router)
+app.include_router(test_upload_thumbnail.router)
