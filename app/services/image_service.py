@@ -1,75 +1,103 @@
-from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Union, Sequence
 from PIL import Image, ImageDraw
-from app import state as app_state
+from pathlib import Path
+from io import BytesIO
+import requests
+from app.constants import (
+    OUTPUT_THUMBNAIL_PATH,
+    BASE_THUMBNAIL_PATH,
+    PFP_BORDER_RADIUS,
+    POSITIONS,
+    BASE_PATH,
+    PFP_SIZE,
+)
 
 
-def _rounded_mask(size, radius: int):
+class ImageServiceError(Exception):
+    def __init__(self, message: str, status_code: int = 500):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+
+
+def _rounded_mask(size, border_radius: int):
     mask = Image.new("L", size, 0)
     draw = ImageDraw.Draw(mask)
     w, h = size
-    draw.rounded_rectangle([(0, 0), (w, h)], radius=radius, fill=255)
+    draw.rounded_rectangle([(0, 0), (w, h)], radius=border_radius, fill=255)
     return mask
 
 
-def update_thumbnail(is_test: bool = False) -> Tuple[Optional[int], Optional[Path]]:
-    """
-    Progressively adds PFPs to a thumbnail (iterating through hard-coded cursor positions):
-    1. Reads a hardcoded pfp `app/assets/mock_pfp.jpeg`
-    2. Resizes to 214x214 (ignoring aspect ratio) and adds a 50px border radius
-    3. Pastes it onto `app/assets/mock_thumbnail.jpeg`
+def _load_image(src: Union[str, Path]) -> Optional[Image.Image]:
+    # If a URL
+    if isinstance(src, str) and (
+        src.startswith("http://") or src.startswith("https://")
+    ):
+        try:
+            resp = requests.get(src, timeout=6)
+            resp.raise_for_status()
+            return Image.open(BytesIO(resp.content)).convert("RGBA")
+        except Exception:
+            return None
 
-    Returns (index, working_path)
-    """
-    repo_root = Path(__file__).resolve().parents[2]
-    assets_dir = repo_root / "app" / "assets"
-    pfp_path = assets_dir / "mock_pfp.jpeg"
-    thumb_path = assets_dir / "mock_thumbnail.jpeg"
+    # If a local path of Path type
+    if isinstance(src, Path):
+        try:
+            return Image.open(src).convert("RGBA")
+        except Exception:
+            return None
 
-    # load and prepare images
-    try:
-        pfp = Image.open(pfp_path).convert("RGBA")
-    except Exception:
-        return None, None
-
-    # choose resampling
-    resample = (
-        Image.Resampling.LANCZOS
-        if hasattr(Image, "Resampling")
-        else getattr(Image, "LANCZOS", 3)
-    )
-    pfp_resized = pfp.resize((214, 214), resample)
+    # If a local path of string type
+    p = Path(src)
+    local_path = p if p.is_absolute() else BASE_PATH / src
 
     try:
-        base = Image.open(thumb_path).convert("RGBA")
+        return Image.open(local_path).convert("RGBA")
     except Exception:
-        return None, None
+        return None
 
-    mask = _rounded_mask((214, 214), radius=50)
 
-    # top-level generated folder (sibling to `app`)
-    gen_root = repo_root / "generated_thumbnail"
+def generate_thumbnail(
+    output_name: str, pfp_sources: Sequence[Union[str, Path]]
+) -> Optional[Path]:
+    """
+    Pastes the first n position PFPs onto the base thumbnail.
+    """
+    try:
+        base = Image.open(Path(BASE_THUMBNAIL_PATH)).convert("RGBA")
+    except Exception:
+        raise ImageServiceError("base thumbnail not found or not loadable", 500)
+
+    # prepare the mask for rounded corners
+    mask = _rounded_mask(PFP_SIZE, border_radius=PFP_BORDER_RADIUS)
+
+    # prepare the output path
+    gen_root = Path(OUTPUT_THUMBNAIL_PATH)
     gen_root.mkdir(parents=True, exist_ok=True)
+    out_path = gen_root / output_name
 
-    working_name = (
-        "mock_thumbnail_working_test.jpg"
-        if is_test
-        else "mock_thumbnail_working_official.jpg"
-    )
-    working_path = gen_root / working_name
-
-    # claim an index via state
-    idx = app_state.fetch_and_increment_next_pfp_position(is_test=is_test)
-    if idx is None:
-        return None, working_path
-
-    # paste avatars from 0..idx inclusive
     composed = base.copy()
-    for i in range(0, idx + 1):
-        pos = app_state.POSITIONS[i]
+
+    # iterate pfps up to positions length
+    has_processed_at_least_one_pfp = False
+
+    for idx, src in enumerate(pfp_sources[: len(POSITIONS)]):
+        if not (img := _load_image(src)):
+            continue
+
+        # resize ignoring aspect ratio
+        resample = (
+            Image.Resampling.LANCZOS
+            if hasattr(Image, "Resampling")
+            else getattr(Image, "LANCZOS", 3)
+        )
+        pfp_resized = img.resize(PFP_SIZE, resample)
+        pos = POSITIONS[idx]
         composed.paste(pfp_resized, pos, mask)
+        has_processed_at_least_one_pfp = True
 
-    # overwrite the working image
-    composed.convert("RGB").save(working_path, format="JPEG", quality=90)
+    if not has_processed_at_least_one_pfp:
+        raise ImageServiceError("no valid source images provided", 400)
 
-    return idx, working_path
+    composed.convert("RGB").save(out_path, format="JPEG", quality=90)
+    return out_path

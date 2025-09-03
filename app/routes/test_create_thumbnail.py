@@ -1,31 +1,25 @@
+from app.services.image_service import generate_thumbnail, ImageServiceError
 from fastapi.responses import JSONResponse
+from app.constants import MOCK_PFP_PATH
 from fastapi import APIRouter
 from pathlib import Path
-from app.services.image_service import update_thumbnail
+from typing import Union, List
 
 router = APIRouter()
 
 
 @router.get("/test-create-thumbnail")
-async def test_create_thumbnail():
-    idx, out_path = update_thumbnail(is_test=True)
-    if idx is None:
-        out_rel = (
-            str(out_path.relative_to(Path.cwd()))
-            if out_path and out_path.exists()
-            else None
-        )
-        return JSONResponse(
-            status_code=409,
-            content={"status": "image full", "generated_image": out_rel},
-        )
+async def test_create_thumbnail(repeat: int = 1):
+    repeat = max(1, int(repeat))
+    pfp_sources: List[Union[str, Path]] = [Path(MOCK_PFP_PATH) for _ in range(repeat)]
 
-    status_code = 201 if idx == 0 else 200
-    out_rel = (
-        str(out_path.relative_to(Path.cwd()))
-        if out_path and out_path.exists()
-        else None
-    )
-    return JSONResponse(
-        status_code=status_code, content={"output": out_rel, "index": idx}
-    )
+    try:
+        out_path = generate_thumbnail("mock_thumbnail_working_test.jpeg", pfp_sources)
+    except ImageServiceError as ex:
+        return JSONResponse(status_code=ex.status_code, content={"error": ex.message})
+    except Exception:
+        return JSONResponse(status_code=500, content={"error": "internal error"})
+
+    out_path_clean = out_path.resolve(strict=True) if out_path else None
+
+    return JSONResponse(status_code=201, content={"output": str(out_path_clean)})

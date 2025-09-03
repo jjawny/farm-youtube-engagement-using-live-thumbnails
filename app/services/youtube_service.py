@@ -27,7 +27,6 @@ def fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
         raw_comment = (
             item.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
         )
-        # TODO: new model/DTO?
         slim_comment = {
             "like_count": int(raw_comment.get("likeCount") or 0),
             "text": raw_comment.get("textDisplay", ""),
