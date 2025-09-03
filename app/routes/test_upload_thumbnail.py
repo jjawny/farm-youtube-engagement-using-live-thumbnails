@@ -23,6 +23,8 @@ async def test_upload_thumbnail(
             detail=f"test thumbnail not found, please test step 2",
         )
 
-    res = await upload_thumbnail_async(youtube, video_id, test_thumbnail_path)
+    youtube_response = await upload_thumbnail_async(
+        youtube, video_id, test_thumbnail_path
+    )
 
-    return {"api_response": res}
+    return {"youtube_response": youtube_response}
