@@ -13,15 +13,21 @@ def main():
     1. Login with the channel owner account
     2. Copy refresh token into .env
     """
+    client_id = os.getenv("OAUTH_CLIENT_ID")
+    client_secret = os.getenv("OAUTH_CLIENT_SECRET")
     client_config = {
         "installed": {
-            "client_id": os.getenv("OAUTH_CLIENT_ID"),
-            "client_secret": os.getenv("OAUTH_CLIENT_SECRET"),
+            "client_id": client_id,
+            "client_secret": client_secret,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
         }
     }
     scopes = [s.strip() for s in os.getenv("OAUTH_SCOPES", "").split(",") if s.strip()]
+
+    if not (client_id and client_secret and scopes):
+        raise RuntimeError("Missing OAuth client credentials or refresh token")
+
     flow = InstalledAppFlow.from_client_config(client_config, scopes=scopes)
 
     # Opens a local server, launches the browser, and captures the auth redirect automatically.
