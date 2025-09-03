@@ -1,7 +1,6 @@
 from googleapiclient.http import MediaFileUpload
 from app.constants import BASE_PATH
 from typing import Dict, Any, List
-from fastapi import HTTPException
 from pathlib import Path
 import asyncio
 
@@ -63,14 +62,14 @@ def _upload_thumbnail(youtube, video_id: str, image_path: Path) -> Dict[str, Any
 
 async def fetch_comments_async(*args, **kwargs) -> Dict[str, Any]:
     """
-    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous)
+    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous).
     """
     return await asyncio.to_thread(_fetch_comments, *args, **kwargs)
 
 
 async def upload_thumbnail_async(*args, **kwargs) -> Dict[str, Any]:
     """
-    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous)
+    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous).
     """
     return await asyncio.to_thread(_upload_thumbnail, *args, **kwargs)
 

@@ -30,7 +30,7 @@ def _build_credentials() -> Credentials:
 
 def build_youtube() -> Tuple[Credentials, Resource]:
     """
-    Returns a new YouTube client and credentials object
+    Returns a new YouTube client and credentials object.
     """
     creds = _build_credentials()
     creds.refresh(AuthRequest())

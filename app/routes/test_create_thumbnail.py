@@ -1,9 +1,9 @@
 from app.services.image_service import generate_thumbnail, ImageServiceError
 from app.constants import MOCK_PFP_PATH, OUTPUT_TEST_THUMBNAIL
 from fastapi.responses import JSONResponse
+from typing import Union, List
 from fastapi import APIRouter
 from pathlib import Path
-from typing import Union, List
 
 router = APIRouter()
 
