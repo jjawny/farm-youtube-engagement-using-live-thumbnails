@@ -1,10 +1,13 @@
 @host = http://localhost:8000
 @repeat_pfp_for_test_thumbnail=3
-@num_of_top_comments=100
-@video_id=
+### NOTE: Daily quota = 10,000 units
 
 ### Health check
 GET {{host}}/ping
+Accept: application/json
+
+### Peek into your channels and videos (costs 2 units)
+GET {{host}}/debug-youtube-access
 Accept: application/json
 
 ### Test step 1 - fetching comments (costs 1 unit)
@@ -15,8 +18,8 @@ Accept: application/json
 GET {{host}}/test-create-thumbnail?repeat={{repeat_pfp_for_test_thumbnail}}
 Accept: application/json
 
-### Test step 3 - Uploading the mock thumbnail to your video (costs ~50 units)
-GET {{host}}/test-upload-thumbnail
+### Test step 3 - Uploading the mock thumbnail (run test step 2) to your video (costs ~50 units)
+GET {{host}}/test-upload-thumbnail?video_id={{video_id}}
 Accept: application/json
 
 ### Main algo - All steps (costs ~51 units)
