@@ -6,6 +6,13 @@ from pathlib import Path
 import asyncio
 
 
+class YouTubeServiceError(Exception):
+    def __init__(self, message: str, status_code: int = 500):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+
+
 def _fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
     max_results = max(1, min(int(limit), 100))
     youtube_response = (
@@ -43,17 +50,15 @@ def _fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
 
 
 def _upload_thumbnail(youtube, video_id: str, image_path: Path) -> Dict[str, Any]:
-    """Synchronous upload of a video's thumbnail using the provided youtube client.
 
-    Returns the API response dict on success; raises HTTPException on failure.
-    """
     try:
         media = MediaFileUpload(str(BASE_PATH / image_path), mimetype="image/jpeg")
         req = youtube.thumbnails().set(videoId=video_id, media_body=media)
         resp = req.execute()
         return resp or {}
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"thumbnail upload failed: {ex}")
+        # Raise a service-level error so routes can translate to HTTP responses
+        raise YouTubeServiceError(f"YouTube response: {ex}", 500)
 
 
 async def fetch_comments_async(*args, **kwargs) -> Dict[str, Any]:

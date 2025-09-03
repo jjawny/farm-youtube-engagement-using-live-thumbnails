@@ -1,5 +1,6 @@
-from app.services.youtube_service import upload_thumbnail_async
+from app.services.youtube_service import upload_thumbnail_async, YouTubeServiceError
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from app.config import get_youtube
 from pathlib import Path
 from app.constants import (
@@ -23,8 +24,18 @@ async def test_upload_thumbnail(
             detail=f"test thumbnail not found, please test step 2",
         )
 
-    youtube_response = await upload_thumbnail_async(
-        youtube, video_id, test_thumbnail_path
-    )
+    try:
+        youtube_response = await upload_thumbnail_async(
+            youtube, video_id, test_thumbnail_path
+        )
+    except YouTubeServiceError as ex:
+        return JSONResponse(status_code=ex.status_code, content={"error": ex.message})
+    except Exception as ex:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"failed to update thumbnail for video '{video_id}', reason: {ex}"
+            },
+        )
 
     return {"youtube_response": youtube_response}
