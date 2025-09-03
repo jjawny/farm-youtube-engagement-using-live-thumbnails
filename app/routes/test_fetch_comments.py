@@ -1,5 +1,6 @@
-from app.services.youtube_service import get_youtube, fetch_comments_async
+from app.services.youtube_service import fetch_comments_async
 from fastapi import APIRouter, Depends
+from app.config import get_youtube
 
 router = APIRouter()
 
