@@ -6,6 +6,18 @@
 GET {{host}}/ping
 Accept: application/json
 
-### Trigger algo
-GET {{host}}/test-farm-comments?limit={{num_of_top_comments}}&video_id={{video_id}}
+### Test step 1 - fetching comments (costs 1 unit)
+GET {{host}}/test-fetch-comments?limit={{num_of_top_comments}}&video_id={{video_id}}
+Accept: application/json
+
+### Test step 2 - pasting a mock pfp on a mock thumbnail (costs 0 units)
+GET {{host}}/test-create-thumbnail
+Accept: application/json
+
+### Test step 3 - Uploading the mock thumbnail to your video (costs ~50 units)
+GET {{host}}/test-upload-thumbnail
+Accept: application/json
+
+### Main algo - All steps (costs ~51 units)
+GET {{host}}/farm-engagement?limit={{num_of_top_comments}}&video_id={{video_id}}
 Accept: application/json
