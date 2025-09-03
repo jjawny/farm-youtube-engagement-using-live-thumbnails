@@ -19,6 +19,7 @@ async def lifespan(app: FastAPI):
     """
     Exposes shared resources for the lifespan of the web API; like a lightweight DI container.
     """
+    # Expose the YouTube API client as a singleton to avoid recreating
     if not (api_key := os.getenv("YOUTUBE_API_KEY")):
         raise HTTPException(status_code=500, detail="Missing YOUTUBE_API_KEY")
 
