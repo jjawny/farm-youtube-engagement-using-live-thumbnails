@@ -1,6 +1,6 @@
 from app.services.image_service import generate_thumbnail, ImageServiceError
+from app.constants import MOCK_PFP_PATH, OUTPUT_TEST_THUMBNAIL
 from fastapi.responses import JSONResponse
-from app.constants import MOCK_PFP_PATH
 from fastapi import APIRouter
 from pathlib import Path
 from typing import Union, List
@@ -14,7 +14,7 @@ async def test_create_thumbnail(repeat: int = 1):
     pfp_sources: List[Union[str, Path]] = [Path(MOCK_PFP_PATH) for _ in range(repeat)]
 
     try:
-        out_path = generate_thumbnail("mock_thumbnail_working_test.jpeg", pfp_sources)
+        out_path = generate_thumbnail(OUTPUT_TEST_THUMBNAIL, pfp_sources)
     except ImageServiceError as ex:
         return JSONResponse(status_code=ex.status_code, content={"error": ex.message})
     except Exception:

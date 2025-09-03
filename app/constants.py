@@ -10,15 +10,17 @@ POSITIONS: List[Tuple[int, int]] = [
     (1008, 195),
 ]
 
-# Base path for services to read/write from
+# Base path
 BASE_PATH: Path = Path(__file__).resolve().parent  # ./app
 
-# Relative path from the base path
+# Input paths
 MOCK_PFP_PATH = BASE_PATH / "assets/mock_pfp.jpeg"
 BASE_THUMBNAIL_PATH = BASE_PATH / "assets/base_thumbnail.jpeg"
-OUTPUT_THUMBNAIL_PATH = (
-    BASE_PATH / "../generated_thumbnail"
-)  # the file_name is a parameter
+
+# Output paths
+OUTPUT_THUMBNAIL_PATH = BASE_PATH / "../generated_thumbnail"
+OUTPUT_OFFICIAL_THUMBNAIL = "thumbnail.jpeg"
+OUTPUT_TEST_THUMBNAIL = "test_thumbnail.jpeg"
 
 # Pixel sizes
 PFP_SIZE = (214, 214)
