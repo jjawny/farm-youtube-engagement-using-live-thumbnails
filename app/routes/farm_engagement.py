@@ -30,20 +30,12 @@ async def farm_engagement(
             },
         )
 
-    # TODO: isn't this redundent?
-    comments = (
-        fetch_comments_response.get("comments", [])
-        if isinstance(fetch_comments_response, dict)
-        else []
-    )
-
     # 2. De-dupe PFP urls and keep the highest like count seen for each unique PFP
     pfp_max_likes = {}
-    for c in comments:
-        pfp = c.get("pfp")
-        if not pfp:
+    for comment in fetch_comments_response.get("comments", []):
+        if not (pfp := comment.get("pfp")):
             continue
-        like_count = int(c.get("like_count") or 0)
+        like_count = int(comment.get("like_count") or 0)
         existing = pfp_max_likes.get(pfp)
         if existing is None or like_count > existing:
             pfp_max_likes[pfp] = like_count
