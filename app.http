@@ -1,4 +1,5 @@
 @host = http://localhost:8000
+@repeat_pfp_for_test_thumbnail=3
 @num_of_top_comments=100
 @video_id=
 
@@ -11,7 +12,7 @@ GET {{host}}/test-fetch-comments?limit={{num_of_top_comments}}&video_id={{video_
 Accept: application/json
 
 ### Test step 2 - pasting a mock pfp on a mock thumbnail (costs 0 units)
-GET {{host}}/test-create-thumbnail
+GET {{host}}/test-create-thumbnail?repeat={{repeat_pfp_for_test_thumbnail}}
 Accept: application/json
 
 ### Test step 3 - Uploading the mock thumbnail to your video (costs ~50 units)
