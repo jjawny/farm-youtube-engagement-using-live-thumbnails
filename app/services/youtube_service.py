@@ -1,15 +1,12 @@
-from fastapi import HTTPException, Request
+from googleapiclient.http import MediaFileUpload
+from app.constants import BASE_PATH
 from typing import Dict, Any, List
+from fastapi import HTTPException
+from pathlib import Path
 import asyncio
 
 
-def get_youtube(request: Request):
-    if not (youtube := getattr(request.app.state, "youtube", None)):
-        raise HTTPException(status_code=500, detail="YouTube client not initialized")
-    return youtube
-
-
-def fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
+def _fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
     max_results = max(1, min(int(limit), 100))
     youtube_response = (
         youtube.commentThreads()
@@ -45,10 +42,29 @@ def fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
     return response
 
 
+def _upload_thumbnail(youtube, video_id: str, image_path: Path) -> Dict[str, Any]:
+    """Synchronous upload of a video's thumbnail using the provided youtube client.
+
+    Returns the API response dict on success; raises HTTPException on failure.
+    """
+    try:
+        media = MediaFileUpload(str(BASE_PATH / image_path), mimetype="image/jpeg")
+        req = youtube.thumbnails().set(videoId=video_id, media_body=media)
+        resp = req.execute()
+        return resp or {}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"thumbnail upload failed: {ex}")
+
+
 async def fetch_comments_async(*args, **kwargs) -> Dict[str, Any]:
     """
-    Fetching comments using Google's package is synchronous.
-
-    Call this async shim to avoid blocking the main thread and other incoming requests.
+    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous)
     """
-    return await asyncio.to_thread(fetch_comments, *args, **kwargs)
+    return await asyncio.to_thread(_fetch_comments, *args, **kwargs)
+
+
+async def upload_thumbnail_async(*args, **kwargs) -> Dict[str, Any]:
+    """
+    Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous)
+    """
+    return await asyncio.to_thread(_upload_thumbnail, *args, **kwargs)
