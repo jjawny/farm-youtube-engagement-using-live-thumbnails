@@ -68,3 +68,45 @@ async def upload_thumbnail_async(*args, **kwargs) -> Dict[str, Any]:
     Call this async shim to avoid blocking the main thread and other incoming requests (Google's package is synchronous)
     """
     return await asyncio.to_thread(_upload_thumbnail, *args, **kwargs)
+
+
+def list_my_channels_and_videos(youtube) -> Dict[str, Any]:
+    """
+    Peek into your channel and videos (first channel, first 10 videos).
+    """
+    # 1. Fetch channel with uploads playlist
+    fetch_channel_response = (
+        youtube.channels()
+        .list(part="snippet,contentDetails", mine=True, maxResults=1)
+        .execute()
+    )
+
+    items = fetch_channel_response.get("items", [])
+    if not items:
+        return {"error": "No channels found."}
+
+    channel = items[0]
+    channel_id = channel["id"]
+    channel_name = channel["snippet"]["title"]
+    uploads_playlist_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
+
+    # 2. Fetch first page of uploaded videos
+    fetch_playlist_response = (
+        youtube.playlistItems()
+        .list(part="snippet", playlistId=uploads_playlist_id, maxResults=10)
+        .execute()
+    )
+
+    videos = [
+        (item["snippet"]["title"], item["snippet"]["resourceId"]["videoId"])
+        for item in fetch_playlist_response.get("items", [])
+    ]
+
+    response = {
+        "channel": {
+            "id": channel_id,
+            "name": channel_name,
+        },
+        "videos": [{"id": vid_id, "title": title} for title, vid_id in videos],
+    }
+    return response

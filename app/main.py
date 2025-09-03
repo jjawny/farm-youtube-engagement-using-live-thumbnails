@@ -3,8 +3,9 @@ from app.config import build_youtube
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from app.routes import (
-    farm_engagement,
     ping,
+    debug_youtube_access,
+    farm_engagement,
     test_fetch_comments,
     test_create_thumbnail,
     test_upload_thumbnail,
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(ping.router)
+app.include_router(debug_youtube_access.router)
 app.include_router(farm_engagement.router)
 app.include_router(test_fetch_comments.router)
 app.include_router(test_create_thumbnail.router)

@@ -34,8 +34,8 @@ def build_youtube() -> Tuple[Credentials, Resource]:
     """
     creds = _build_credentials()
     creds.refresh(AuthRequest())
-    client = build("youtube", "v3", credentials=creds)
-    return creds, client
+    youtube = build("youtube", "v3", credentials=creds)
+    return creds, youtube
 
 
 def get_youtube(request: Request) -> Resource:
