@@ -21,22 +21,22 @@ Using an API key is simple for reads (listing comments) but OAuth is required fo
 
 Lifespan of Google's Refresh Token? As of writing, they appear to be `~600k seconds ≈ 7 days`. This is plenty of time for this project's purpose. Recommend storing in a secrets vault (e.g., Azure Key Vault) and restart the web API/create an operational endpoint to hot reload the YouTube client with the new Refresh Token.
 
-1. Create [.env](./.env) to populate in the subsequent steps
+1. Create [.env](./.env) to populate in the subsequent steps:
    ```shell
    cp .env.example .env
    ```
-2. Get your **Client ID** and **Client Secret** by generating your Google OAuth Client [here](https://console.cloud.google.com/apis/credentials) (choose Desktop to avoid specifying origins and redirect URLs etc)  
+2. Get your **Client ID** and **Client Secret** by generating your Google OAuth Client [here](https://console.cloud.google.com/apis/credentials) (choose Desktop to avoid specifying origins and redirect URLs etc):  
    ![How to generate YouTube API key step 1](./README/how-to-create-youtube-oauth-client.jpg)
-3. Before the next step, you may need to add your account (channel owner account) as a test user if your app is unpublished  
+3. Before the next step, you may need to add your account (channel owner account) as a test user if your app is unpublished:  
    ![How to add your account as a test user](./README/how-to-set-test-users.jpg)
-4. To get the **Refresh Token**, run the script (will launch your browser) and login
+4. To get the **Refresh Token**, run the script (will launch your browser) and login:
    ```shell
    chmod +x script_to_obtain_refresh_token.py
    ./script_to_obtain_refresh_token.py
    ```
 5. You now have the **Client ID**, **Client Secret**, add **Refresh Token**, add them to [.env](./.env)
 6. That's it for environment variables!
-7. If you are a new channel, YouTube may block you from setting custom thumbnails. To fix this, try to change the thumbnail via YouTube's frontend and Google will ask you to verify.
+7. If you are a new channel, YouTube may block you from setting custom thumbnails. To fix this, try to change the thumbnail via YouTube's frontend and Google will ask you to verify
 
 </details>
 
@@ -45,7 +45,7 @@ Lifespan of Google's Refresh Token? As of writing, they appear to be `~600k seco
 
 - Assumes you're using asdf (last using Python 3.13.7)
 - Assumes you haven't used 100% of your YouTube API daily quota
-- How to start the web API? Run in [root](.)
+- How to start the web API? Run in [root](.):
   ```shell
   python3 -m venv venv
   source venv/bin/activate
@@ -68,12 +68,12 @@ Lifespan of Google's Refresh Token? As of writing, they appear to be `~600k seco
   ```
 
 ### _"Any improvements?"_
-- You can add funnels to only process users who have liked/commented/subscribed - maxxing interactions.
-- Persist the current progress in an external DB to avoid data loss (users processed so far, cursor position to paste the next PFP, the latest thumbnail, etc).
-- More dynamic behaviour, for example: reduce the image quality if YouTube's >2MB limit, scale down the update thumbnail cadence based on remaining quota per day, fetch comments paginated (costs more reads), etc.
-- YouTube's _order by relevance_ query param may not return comments immediately for a brand new video, fallback to retrying fetching comments with _order by time_ for resiliency.
-- Add caching for previously seen/downloaded PFPs.
-- Add logging.
+- You can add funnels to only process users who have liked/commented/subscribed - maxxing interactions
+- Persist the current progress in an external DB to avoid data loss (users processed so far, cursor position to paste the next PFP, the latest thumbnail, etc)
+- More dynamic behaviour, for example: reduce the image quality if YouTube's >2MB limit, scale down the update thumbnail cadence based on remaining quota per day, fetch comments paginated (costs more reads), etc
+- YouTube's _order by relevance_ query param may not return comments immediately for a brand new video, fallback to retrying fetching comments with _order by time_ for resiliency
+- Add caching for previously seen/downloaded PFPs
+- Add logging
 
 ### _"So this gets the top comments?"_
 YouTube's _order by relevance_ query param when fetching the top comments is not the same algo as the one you see on YouTube's frontend - they are similar (enough to get the job done) but not 1:1.
