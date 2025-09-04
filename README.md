@@ -1,6 +1,6 @@
 # Farm YouTube engagement using live thumbnails
 
-Growth idea: encourage users to engage by placing them on your thumbnail in semi-real-time.
+💡 Growth idea: encourage users to engage by placing them on your thumbnail in semi-real-time.
 
 ![Demo](./README/demo.gif)
 
