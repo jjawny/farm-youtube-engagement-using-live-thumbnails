@@ -1,8 +1,8 @@
 # Farm YouTube engagement using live thumbnails
 
-Growth strategy: users who comment on your video appear on your thumbnail in semi-real-time.
+Growth idea: encourage users to engage by placing them on your thumbnail in semi-real-time.
 
-TODO: GIF here (mix in capcut, screen record, convert to GIF keep mp4 preview JIC)
+![Demo](./README/demo.gif)
 
 <details>
 <summary>1. Any prerequisites?</summary>
