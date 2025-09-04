@@ -1,8 +1,8 @@
 from app.services.image_service import generate_thumbnail, ImageServiceError
 from app.constants import OUTPUT_OFFICIAL_THUMBNAIL, POSITIONS
+from app.config import get_http_client, get_youtube
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends
-from app.config import get_youtube
 from typing import List
 from app.services.youtube_service import (
     fetch_comments_async,
@@ -15,7 +15,10 @@ router = APIRouter()
 
 @router.get("/farm-engagement")
 async def farm_engagement(
-    video_id: str, limit: int = 100, youtube=Depends(get_youtube)
+    video_id: str,
+    limit: int = 100,
+    youtube=Depends(get_youtube),
+    http_session=Depends(get_http_client),
 ):
     # 1. Fetch comments
     try:
@@ -51,7 +54,9 @@ async def farm_engagement(
 
     # 5. Generate thumbnail
     try:
-        out_path = generate_thumbnail(OUTPUT_OFFICIAL_THUMBNAIL, ordered_pfps)
+        out_path = generate_thumbnail(
+            OUTPUT_OFFICIAL_THUMBNAIL, ordered_pfps, http_session
+        )
     except ImageServiceError as ex:
         return JSONResponse(status_code=ex.status_code, content={"error": ex.message})
     except Exception as ex:
