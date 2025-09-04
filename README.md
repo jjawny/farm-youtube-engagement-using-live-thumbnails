@@ -79,7 +79,9 @@ This accuracy would require more reads (for pagination) and more compute to re-c
 
 ### _"Any improvements?"_
 - You can add funnels to only process users who have liked/commented/subscribed - maxxing interactions.
-- (maybe go in next steps/combine these sections) Persist the current progress in a DB  (cursor position for the next pfp, latest banner, etc) and load each run to ensure resiliency (no data loss upon server restarts, crahes, etc)
-- More dynamic (lower image quality if over 2MB limit), dynamic cadence (scale down) based on available quota, fetch comments paginated (users more reads)
+- Persist the current progress in a DB (cursor position for the next pfp, latest banner, etc) and load each run to ensure resiliency (no data loss upon server restarts, crahes, etc)
+- More dynamic behaviour, for example: lower image quality if over 2MB limit, scale down the update thumbnail cadence based on available quota, fetch comments paginated (costs more reads), etc
+- Add caching for previously downloaded PFPs
+- Add logging
 
 </details>
