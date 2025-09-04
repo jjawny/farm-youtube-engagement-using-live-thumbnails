@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Union, Sequence
 from PIL import Image, ImageDraw
 from pathlib import Path
@@ -28,15 +29,24 @@ def _rounded_mask(size, border_radius: int):
     return mask
 
 
-def _load_image(src: Union[str, Path]) -> Optional[Image.Image]:
+def _load_image(
+    src: Union[str, Path], http_session: Optional[requests.Session] = None
+) -> Optional[Image.Image]:
     # If a URL
     if isinstance(src, str) and (
         src.startswith("http://") or src.startswith("https://")
     ):
         try:
-            resp = requests.get(src, timeout=6)
-            resp.raise_for_status()
-            return Image.open(BytesIO(resp.content)).convert("RGBA")
+            if http_session is None:
+                with requests.Session() as sesh:
+                    resp = sesh.get(src, timeout=6)
+                    resp.raise_for_status()
+                    return Image.open(BytesIO(resp.content)).convert("RGBA")
+            # Use provided session when available to allow connection reuse (reuse same TCP connection).
+            else:
+                resp = http_session.get(src, timeout=6)
+                resp.raise_for_status()
+                return Image.open(BytesIO(resp.content)).convert("RGBA")
         except Exception:
             return None
 
@@ -48,8 +58,7 @@ def _load_image(src: Union[str, Path]) -> Optional[Image.Image]:
             return None
 
     # If a local path of string type
-    p = Path(src)
-    local_path = p if p.is_absolute() else BASE_PATH / src
+    local_path = p if (p := Path(src)).is_absolute() else (BASE_PATH / src)
 
     try:
         return Image.open(local_path).convert("RGBA")
@@ -58,7 +67,9 @@ def _load_image(src: Union[str, Path]) -> Optional[Image.Image]:
 
 
 def generate_thumbnail(
-    output_name: str, pfp_sources: Sequence[Union[str, Path]]
+    output_name: str,
+    pfp_sources: Sequence[Union[str, Path]],
+    http_session: Optional[requests.Session] = None,
 ) -> Optional[Path]:
     """
     Pastes the first n position PFPs onto the base thumbnail.
@@ -68,29 +79,45 @@ def generate_thumbnail(
     except Exception:
         raise ImageServiceError("base thumbnail not found or not loadable", 500)
 
-    # prepare the mask for rounded corners
+    # Prepare the mask for rounded corners
     mask = _rounded_mask(PFP_SIZE, border_radius=PFP_BORDER_RADIUS)
 
-    # prepare the output path
+    # Prepare the output
     gen_root = Path(OUTPUT_THUMBNAIL_PATH)
     gen_root.mkdir(parents=True, exist_ok=True)
     out_path = gen_root / output_name
-
     composed = base.copy()
 
-    # iterate pfps up to positions length
-    has_processed_at_least_one_pfp = False
+    # Fetch images in parallel (network IO), keep results keyed by original index
+    sources = list(pfp_sources[: len(POSITIONS)])
+    results = {}
+    max_workers = min(20, max(1, len(sources)))  # match your pool_maxsize (~20)
 
-    for idx, src in enumerate(pfp_sources[: len(POSITIONS)]):
-        if not (img := _load_image(src)):
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        future_to_idx = {
+            ex.submit(_load_image, src, http_session): idx
+            for idx, src in enumerate(sources)
+        }
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            try:
+                results[idx] = future.result()
+            except Exception:
+                results[idx] = None
+
+    # Iterate in original order and paste PFPs
+    has_processed_at_least_one_pfp = False
+    resample = (
+        Image.Resampling.LANCZOS
+        if hasattr(Image, "Resampling")
+        else getattr(Image, "LANCZOS", 3)
+    )
+
+    for idx in range(len(sources)):
+        if not (img := results.get(idx)):
             continue
 
-        # resize ignoring aspect ratio
-        resample = (
-            Image.Resampling.LANCZOS
-            if hasattr(Image, "Resampling")
-            else getattr(Image, "LANCZOS", 3)
-        )
+        # Resize ignoring aspect ratio
         pfp_resized = img.resize(PFP_SIZE, resample)
         pos = POSITIONS[idx]
         composed.paste(pfp_resized, pos, mask)

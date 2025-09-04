@@ -1,9 +1,14 @@
 from google.auth.transport.requests import Request as AuthRequest
 from googleapiclient.discovery import build, Resource
 from google.oauth2.credentials import Credentials
+from requests import Session
 from fastapi import Request
+from threading import Lock
 from typing import Tuple
+import requests
 import os
+
+_CREATE_NEW_HTTP_SESSION_LOCK = Lock()
 
 
 def _build_credentials() -> Credentials:
@@ -33,7 +38,6 @@ def build_youtube() -> Tuple[Credentials, Resource]:
     Returns a new YouTube client and credentials object.
     """
     creds = _build_credentials()
-    creds.refresh(AuthRequest())
     youtube = build("youtube", "v3", credentials=creds)
     return creds, youtube
 
@@ -47,24 +51,48 @@ def get_youtube(request: Request) -> Resource:
     youtube = getattr(request.app.state, "youtube", None)
     creds = getattr(request.app.state, "youtube_creds", None)
 
-    # Happy path: client exists and creds still usable
     if youtube and creds:
         try:
-            if getattr(creds, "valid", False):
+            if (not getattr(creds, "expired", True)) and getattr(creds, "valid", False):
                 return youtube
-            # If expired, refresh and rebuild
-            if getattr(creds, "expired", False) or not getattr(creds, "valid", False):
-                creds.refresh(AuthRequest())
-                client = build("youtube", "v3", credentials=creds)
-                request.app.state.youtube = client
-                return client
+
+            else:
+                try:
+                    creds.refresh(AuthRequest())
+                    client = build("youtube", "v3", credentials=creds)
+                    request.app.state.youtube = client
+                    request.app.state.youtube_creds = creds
+                    return client
+                except Exception:
+                    # Continue to rebuild
+                    pass
         except Exception:
-            # Fall through to rebuild
-            # TODO: Add logging
+            # Continue to rebuild
             pass
 
     # Rebuild
     creds, client = build_youtube()
+    try:
+        creds.refresh(AuthRequest())
+    except Exception:
+        # Don't crash, let YouTube API calls fail with clear errors.
+        pass
+
     request.app.state.youtube = client
     request.app.state.youtube_creds = creds
     return client
+
+
+def get_http_client(request: Request) -> Session:
+    existing = getattr(request.app.state, "http_session", None)
+    if existing is not None:
+        return existing
+
+    # Avoid race-conditions (multiple requests triggering creating a new session)
+    with _CREATE_NEW_HTTP_SESSION_LOCK:
+        existing = getattr(request.app.state, "http_session", None)
+        if existing is not None:
+            return existing
+        session = requests.Session()
+        request.app.state.http_session = session
+        return session
