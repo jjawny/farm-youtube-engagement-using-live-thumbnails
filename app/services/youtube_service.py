@@ -15,14 +15,15 @@ class YouTubeServiceError(Exception):
 def _fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
     max_results = max(1, min(int(limit), 100))
     youtube_response = (
-        youtube.commentThreads()
-        .list(
-            part="snippet",
-            videoId=video_id,
-            maxResults=max_results,
-            order="relevance",  # not 1:1 with YouTube's top comments algo, but close enough
-        )
-        .execute()
+        youtube
+            .commentThreads()
+            .list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=max_results,
+                order="relevance" # not 1:1 with YouTube's top comments algo, but close enough
+            )
+            .execute()
     )
 
     comments: List[Dict[str, Any]] = []
@@ -51,12 +52,16 @@ def _fetch_comments(youtube, video_id: str, limit: int) -> Dict[str, Any]:
 def _upload_thumbnail(youtube, video_id: str, image_path: Path) -> Dict[str, Any]:
 
     try:
+       
         media = MediaFileUpload(str(BASE_PATH / image_path), mimetype="image/jpeg")
-        req = youtube.thumbnails().set(videoId=video_id, media_body=media)
-        resp = req.execute()
-        return resp or {}
+        response = (
+            youtube
+                .thumbnails()
+                .set(videoId=video_id, media_body=media)
+                .execute()
+        )
+        return response
     except Exception as ex:
-        # Raise a service-level error so routes can translate to HTTP responses
         raise YouTubeServiceError(f"YouTube response: {ex}", 500)
 
 
