@@ -1,7 +1,10 @@
 # Farm YouTube engagement using live thumbnails
 
-💡 Growth idea: encourage users to engage by placing them on your thumbnail in semi-real-time.
+💡 Growth idea: encourage users to engage by placing them on your thumbnail live.
 
+ℹ️ Tech summary: a FastAPI with one endpoint to refresh the thumbnail, to be pinged by an external CRON job at a semi-real-time cadence.
+
+▶️ Demo:  
 ![Demo](./README/demo.gif)
 
 <details>
